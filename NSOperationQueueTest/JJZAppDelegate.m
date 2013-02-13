@@ -72,13 +72,14 @@
 {
     if ([keyPath isEqualToString:@"operationCount"])
     {
-        [self addLogMessage:[NSString stringWithFormat:@"Queue Operation Count: %@", change[NSKeyValueChangeNewKey]]];
+        [self addLogMessage:[NSString stringWithFormat:@"Operation Queue Count: %@", change[NSKeyValueChangeNewKey]]];
     }
 }
 
 - (IBAction)clearDisplay:(id)sender
 {
     [[self.logMessageArrayController content] removeAllObjects];
+    [self.logMessageArrayController setSelectionIndexes:[NSIndexSet indexSet]];
     [self.tableView reloadData];
     [self.tableView scrollRowToVisible:0];
 }
