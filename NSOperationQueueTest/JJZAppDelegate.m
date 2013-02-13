@@ -11,6 +11,8 @@
 @interface JJZAppDelegate ()
 @property (nonatomic, strong) NSOperationQueue     *queue;
 @property (nonatomic, strong) dispatch_semaphore_t semaphore;
+
+@property (atomic, weak) NSOperation *lastOperation;
 @end
 
 @implementation JJZAppDelegate
@@ -24,6 +26,7 @@
     operationQueue.maxConcurrentOperationCount = 1;
 
     self.queue = operationQueue;
+    [self.queue addObserver:self forKeyPath:@"operationCount" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:nil];
 
     [self.pauseOperationsButton setEnabled:YES];
     [self.resumeOperationsButton setEnabled:NO];
@@ -57,6 +60,17 @@
         [self.resumeOperationsButton setEnabled:NO];
 
         [self addLogMessage:@"Operation Queue Resumed"];
+    }
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath
+                      ofObject:(id)object
+                        change:(NSDictionary *)change
+                       context:(void *)context
+{
+    if ([keyPath isEqualToString:@"operationCount"])
+    {
+        [self addLogMessage:[NSString stringWithFormat:@"Queue Operation Count: %@", change[NSKeyValueChangeNewKey]]];
     }
 }
 
@@ -146,7 +160,7 @@
             {
                 [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Initialization Task Start", operationGroupCount, operationCount]];
                 [NSThread sleepForTimeInterval:1];
-                [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Initialization Task End", operationGroupCount, operationCount]];
+                [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Initialization Task Complete", operationGroupCount, operationCount]];
             }
         }]];
 
@@ -159,24 +173,27 @@
     operationCount++;
 
     // RCP: Quasi-completion handler
-    [operations addObject:[NSBlockOperation blockOperationWithBlock:^{
-            JJZAppDelegate *__strong strongSelf = weakSelf;
+    NSOperation *completionOp = [NSBlockOperation blockOperationWithBlock:^{
+        JJZAppDelegate *__strong strongSelf = weakSelf;
 
-            if (strongSelf)
-            {
-                [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Final Aggregator - Start", operationGroupCount, operationCount]];
+        if (strongSelf)
+        {
+            [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Final Aggregator - Start", operationGroupCount, operationCount]];
 
-                NSUInteger waitTime = [strongSelf randomWaitTime];
-                [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Final Aggregator - Sleeping for %lu seconds", operationGroupCount, operationCount, waitTime]];
-                [NSThread sleepForTimeInterval:waitTime];
+            NSUInteger waitTime = [strongSelf randomWaitTime];
+            [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Final Aggregator -   Sleeping for %lu seconds", operationGroupCount, operationCount, waitTime]];
+            [NSThread sleepForTimeInterval:waitTime];
 
-                // Cleanup!
-                [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Final Aggregator - Complete", operationGroupCount, operationCount]];
-            }
-        }]];
+            // Cleanup!
+            [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Final Aggregator - Complete", operationGroupCount, operationCount]];
+        }
+    }];
+
+    [operations addObject:completionOp];
 
     // Lastly, make all of these operations dependent upon eachother.
-    NSOperation *__block previousOperation = nil;
+    NSOperation *__block previousOperation = self.lastOperation;
+    self.lastOperation = completionOp;
 
     [operations enumerateObjectsUsingBlock:^(NSOperation *currentOperation, NSUInteger idx, BOOL *stop) {
         if (previousOperation != nil)
@@ -204,7 +221,7 @@
             [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Start", operationGroupCount, operationCount]];
 
             NSUInteger waitTime = [strongSelf randomWaitTime];
-            [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Sleeping for %lu seconds", operationGroupCount, operationCount, waitTime]];
+            [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu -   Sleeping for %lu seconds", operationGroupCount, operationCount, waitTime]];
             [NSThread sleepForTimeInterval:waitTime];
 
             [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Complete", operationGroupCount, operationCount]];
