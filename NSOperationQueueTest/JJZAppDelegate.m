@@ -11,13 +11,12 @@
 @interface JJZAppDelegate ()
 @property (nonatomic, strong) NSOperationQueue     *queue;
 @property (nonatomic, strong) dispatch_semaphore_t semaphore;
-
-@property (atomic, weak) NSOperation *lastOperation;
 @end
 
 @implementation JJZAppDelegate
 {
     NSUInteger _operationGroupCount;
+    NSOperation *__weak _lastOperation;
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
@@ -133,6 +132,19 @@
     return count;
 }
 
+- (NSOperation *)getAndSetLastSyncToOperation:(NSOperation *)newLastSyncToOperation
+{
+    NSOperation *previousLastSyncToOperation = nil;
+    
+    @synchronized(self)
+    {
+        previousLastSyncToOperation = _lastOperation;
+        _lastOperation = newLastSyncToOperation;
+    }
+    
+    return previousLastSyncToOperation;
+}
+
 - (void)performOperationalMagic
 {
     NSUInteger operationGroupCount = [self incrementAndReturnOperationGroupCount];
@@ -206,8 +218,7 @@
     [operations addObject:completionOp];
 
     // Lastly, make all of these operations dependent upon eachother.
-    NSOperation *__block previousOperation = self.lastOperation;
-    self.lastOperation = completionOp;
+    NSOperation *__block previousOperation = [self getAndSetLastSyncToOperation:completionOp];
 
     [operations enumerateObjectsUsingBlock:^(NSOperation *currentOperation, NSUInteger idx, BOOL *stop) {
         if (previousOperation != nil)
