@@ -15,9 +15,14 @@
 @property (weak) IBOutlet NSTableView       *tableView;
 @property (weak) IBOutlet NSButton          *followTableViewCheckBox;
 @property (weak) IBOutlet NSButton          *enqueueButton;
+@property (weak) IBOutlet NSButton          *pauseOperationsButton;
+@property (weak) IBOutlet NSButton          *resumeOperationsButton;
 @property (weak) IBOutlet NSButton          *clearDisplayButton;
+@property (weak) IBOutlet NSDateFormatter   *dateFormatter;
 
 - (IBAction)enqueueOperations:(id)sender;
+- (IBAction)pauseOperations:(id)sender;
+- (IBAction)resumeOperations:(id)sender;
 - (IBAction)clearDisplay:(id)sender;
 
 @end
