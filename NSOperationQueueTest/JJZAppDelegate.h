@@ -10,6 +10,14 @@
 
 @interface JJZAppDelegate : NSObject <NSApplicationDelegate>
 
-@property (assign) IBOutlet NSWindow *window;
+@property (assign) IBOutlet NSWindow        *window;
+@property (weak) IBOutlet NSArrayController *logMessageArrayController;
+@property (weak) IBOutlet NSTableView       *tableView;
+@property (weak) IBOutlet NSButton          *followTableViewCheckBox;
+@property (weak) IBOutlet NSButton          *enqueueButton;
+@property (weak) IBOutlet NSButton          *clearDisplayButton;
+
+- (IBAction)enqueueOperations:(id)sender;
+- (IBAction)clearDisplay:(id)sender;
 
 @end
