@@ -25,8 +25,6 @@
 
     self.queue = operationQueue;
 
-    self.semaphore = dispatch_semaphore_create(1);
-
     [self.pauseOperationsButton setEnabled:YES];
     [self.resumeOperationsButton setEnabled:NO];
 
@@ -146,7 +144,9 @@
 
             if (strongSelf)
             {
-                [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Initialization", operationGroupCount, operationCount]];
+                [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Initialization Task Start", operationGroupCount, operationCount]];
+                [NSThread sleepForTimeInterval:1];
+                [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Initialization Task End", operationGroupCount, operationCount]];
             }
         }]];
 
@@ -166,23 +166,12 @@
             {
                 [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Final Aggregator - Start", operationGroupCount, operationCount]];
 
-                [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Final Aggregator - Waiting for semaphore", operationGroupCount, operationCount]];
-                if (dispatch_semaphore_wait(strongSelf.semaphore, dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * 300)) == 0)
-                {
-                    [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Final Aggregator - Received semaphore", operationGroupCount, operationCount]];
-
-                    NSUInteger waitTime = [strongSelf randomWaitTime];
-                    [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Final Aggregator - Sleeping for %lu seconds", operationGroupCount, operationCount, waitTime]];
-                    [NSThread sleepForTimeInterval:waitTime];
-                }
-                else
-                {
-                    [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Final Aggregator - Failed to receive semaphore", operationGroupCount, operationCount]];
-                }
+                NSUInteger waitTime = [strongSelf randomWaitTime];
+                [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Final Aggregator - Sleeping for %lu seconds", operationGroupCount, operationCount, waitTime]];
+                [NSThread sleepForTimeInterval:waitTime];
 
                 // Cleanup!
-                [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Final Aggregator - Complete, Signaling semaphore", operationGroupCount, operationCount]];
-                dispatch_semaphore_signal(strongSelf.semaphore);
+                [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Final Aggregator - Complete", operationGroupCount, operationCount]];
             }
         }]];
 
@@ -212,33 +201,13 @@
 
         if (strongSelf != nil)
         {
-            [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Request - Start", operationGroupCount, operationCount]];
-            [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Request - Waiting for semaphore", operationGroupCount, operationCount]];
-            if (dispatch_semaphore_wait(strongSelf.semaphore, dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC * 300)) == 0)
-            {
-                [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Request - Received semaphore", operationGroupCount, operationCount]];
+            [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Start", operationGroupCount, operationCount]];
 
-                NSUInteger delayInSeconds = [strongSelf randomWaitTime];
+            NSUInteger waitTime = [strongSelf randomWaitTime];
+            [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Sleeping for %lu seconds", operationGroupCount, operationCount, waitTime]];
+            [NSThread sleepForTimeInterval:waitTime];
 
-                [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Request - Sleeping for %lu seconds", operationGroupCount, operationCount, delayInSeconds]];
-
-                dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
-                dispatch_after(popTime, dispatch_get_current_queue(), ^(void){
-                        [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Response - Start", operationGroupCount, operationCount]];
-
-                        NSUInteger waitTime = [strongSelf randomWaitTime];
-                        [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Response - Sleeping for %lu seconds", operationGroupCount, operationCount, waitTime]];
-                        [NSThread sleepForTimeInterval:waitTime];
-
-                        [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Response - Signaling semaphore", operationGroupCount, operationCount]];
-                        dispatch_semaphore_signal(strongSelf.semaphore);
-                        [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Complete", operationGroupCount, operationCount]];
-                    });
-            }
-            else
-            {
-                [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Request - Failed to receive semaphore", operationGroupCount, operationCount]];
-            }
+            [strongSelf addLogMessage:[NSString stringWithFormat:@"Operation Group: %lu - Operation: %lu - Complete", operationGroupCount, operationCount]];
         }
     }];
 
