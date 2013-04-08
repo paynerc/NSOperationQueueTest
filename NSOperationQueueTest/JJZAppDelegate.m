@@ -15,7 +15,7 @@
 
 @implementation JJZAppDelegate
 {
-    NSUInteger _operationGroupCount;
+    NSUInteger          _operationGroupCount;
     NSOperation *__weak _lastOperation;
 }
 
@@ -135,13 +135,13 @@
 - (NSOperation *)getAndSetLastSyncToOperation:(NSOperation *)newLastSyncToOperation
 {
     NSOperation *previousLastSyncToOperation = nil;
-    
+
     @synchronized(self)
     {
         previousLastSyncToOperation = _lastOperation;
         _lastOperation = newLastSyncToOperation;
     }
-    
+
     return previousLastSyncToOperation;
 }
 
